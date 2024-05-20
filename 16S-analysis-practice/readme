@@ -1,5 +1,5 @@
 This repository contains an R Markdown file and associated example data, the goal of which is to introduce students to multivariate analysis of community composition data based on 16S rRNA gene sequencing.
 
-This tutorial was designed for use on posit.cloud. It teaches students to use the R packages vegan and phyloseq to produce visualizations including ordinations and stacked bar charts. The tutorial assumes students have prior exposure to these types of data visualization as well as basic familiarity with R.
+This tutorial was designed for use in RStudio. It teaches students to use the R packages vegan and phyloseq to produce visualizations including ordinations and stacked bar charts. The tutorial assumes students have prior exposure to these types of data visualization as well as basic familiarity with R.
 
 The community data in this example were selected to show striking, easily interpretable patterns with a reasonable number of samples. They were sourced from Wear et al. 2021, https://doi.org/10.3389/fmars.2021.634803
