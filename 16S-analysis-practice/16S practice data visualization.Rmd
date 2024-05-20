@@ -1,0 +1,162 @@
+---
+title: "16S practice data visualization"
+output: html_document
+date: "2023-11-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Now, we'll use R, and some add-on software packages, to look at 16S rRNA gene sequencing data.
+
+We're going to work with pre-analyzed relative abundance data today.
+
+These samples were collected from the central Pacific; they include two depth profiles through the water column (labeled DC.sampleID.XX; the last part of the sample name is the collection depth in m) and two depth profiles through the upper sediments (labeled DC2.sampleID.XXtoXX; the last part of the sample name is the depth range in cm).
+
+## vegan
+
+The first package we'll use, called vegan, is written for general community ecology.
+
+```{r}
+library(vegan)
+```
+
+Read in the file "example_data_counts.csv":
+
+```{r}
+# for this dataset, we need to add extra info to clarify the row names
+
+ASV_counts <- read.table("example_data_counts.csv", sep=",", header=TRUE, row.names=1)
+
+```
+
+Examine the dataset:
+
+```{r}
+head(ASV_counts)
+```
+
+You should see a very boring table, with samples identified just Sample ID and ASVs simply numbered. The full taxonomic names are messy in spreadsheets like this, so it's normal to separate out that info.
+
+First, we'll calculate the Shannon diversity index for each sample: (for more info, see <https://bio.libretexts.org/Sandboxes/tholmberg_at_nwcc.edu/General_Ecology_Ecology/Chapter_22%3A_Biodiversity/22.5%3A_Measuring_Biodiveristy>)
+
+```{r}
+
+shannon <- diversity(ASV_counts, index = "shannon", MARGIN = 1, base = exp(1))
+View(shannon)
+```
+
+Question: Which samples have the lowest Shannon diversity (substrate, i.e. water or sediment, and depth)? Which have the highest Shannon diversity?
+
+If you've done work with quantitative macro-organism ecology, these Shannon diversity values may look really stupidly high. That's ok -- it's because microbial communities are legitimately much more diverse than macro-organism communities. Macro-organism communities are also often surveyed in more limited ways, like all of the plants in an ecosystem rather than all of the plants plus birds plus insects plus... Our bacterial and archaeal surveys are a lot more like the latter scenario.
+
+Now, we'll make a basic ordination of this dataset.
+
+If you're really interested in this and would like further info, I highly recommend this guide from an author of the vegan package: <https://cran.r-project.org/web/packages/vegan/vignettes/intro-vegan.pdf>
+
+We have to make the ordination and then plot the ordination:
+
+```{r}
+
+ord <- metaMDS(ASV_counts, distance = "bray")
+plot(ord)
+
+```
+
+This version is pretty hard to read - the default is to plot the individual samples as black circles and then to plot all of the species driving their pattern on top of them.
+
+Let's get rid of the ASVs:
+
+```{r}
+plot(ord, type = "n")
+points(ord, display = "sites", cex = 0.8, pch =21, col="blue")
+
+```
+
+Ok, better - but it'd also help to know which sites are which:
+
+```{r}
+plot(ord, type = "n")
+points(ord, display = "sites", cex = 0.8, pch =21, col="blue")
+text(ord, display = "sites", cex=0.7,col="red")
+```
+
+This isn't good figure design, but you should nonetheless see a few patterns, especially a division between water and sediment samples.
+
+Another way to look at sample relatedness is a cluster dendrogram (like a phylogenetic tree in structure, but a very different type of data input). This is especially useful when you have a small number of samples -- ordinations don't work well with less than around 10 samples.
+
+```{r}
+distance.matrix <- vegdist(ASV_counts, distance = "bray")
+
+clust <- hclust(distance.matrix)
+
+plot(clust, hang = -1)
+
+```
+
+What are the main clusters you see?
+
+## phyloseq
+
+phyloseq is a very specialized R package that's optimized for 16S sequencing output.
+
+First, we need to read in different data (same samples, but phyloseq is equipped to handle taxonomic IDs):
+
+```{r}
+#run this whole code chunk:
+
+library(phyloseq)
+
+ASVs_2 <- read.table("example_data_phyloseq.csv", sep=",", header=TRUE, row.names=1)
+OTU = otu_table(ASVs_2, taxa_are_rows = TRUE)
+IDs <- read.table("example_data_taxonomy.csv", sep=",", header=TRUE, row.names=1)
+TAX = tax_table(IDs)
+physeq = phyloseq(OTU, TAX)
+physeq
+
+```
+
+You won't see output here, but you can see a summary of the phyloseq dataset in the console below, indicating numbers of samples, taxa, and taxonomic ranks (that is, domain, phylum, etc.).
+
+Start examining your data by making a stacked barchart:
+
+```{r}
+
+plot_bar(physeq,fill = "ta2")
+
+```
+
+You'll probably need to expand the plot viewer window to see the results. (The plot will adjust to fit the expanded window, but slooooowly. Give it time.)
+
+(ta is the taxonomic level; it counts up from domain. I cannot figure out why phyloseq won't import the column headers correctly; it is not a great program.)
+
+Now, let's look at a subset of the data. Let's make a stacked bar chart of just the Cyanobacteria in each sample.
+
+```{r}
+
+gp.cyano = subset_taxa(physeq, ta2 == "Cyanobacteria")
+
+plot_bar(gp.cyano)
+```
+
+Does this plot make ecological sense? (Hopefully yes! Remember, the sample names include the depths at which they were collected.)
+
+11. Let's break this down even further and color this plot by cyanobacterial genera.
+
+```{r}
+
+plot_bar(gp.cyano, fill = "ta6")
+```
+
+You should see differences in the relative proportions of the two major cyanobacteria we've talked about, Prochlorococcus (smaller and usually more abundant in the surface open ocean) and Synechococcus (larger and tends to prefer higher nutrient environments, like coastal areas or deeper in the water column).
+
+## summary
+
+Awesome -- in a short span of time, you've used R to:
+
+• Calculate alpha diversity patterns in your samples - that is, the Shannon diversity index in each sample
+
+• Visualize beta diversity, or how the samples differ from one another, in multiple ways, each of which lets you identify overarching ecological patterns
+
+• And make stacked bar charts of increasing complexity, which lets you start to explore what is driving the differences between the larger communities
