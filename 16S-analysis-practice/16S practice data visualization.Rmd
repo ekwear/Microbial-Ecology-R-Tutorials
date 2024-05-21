@@ -129,7 +129,7 @@ plot_bar(physeq,fill = "ta2")
 
 You'll probably need to expand the plot viewer window to see the results. (The plot will adjust to fit the expanded window, but slooooowly. Give it time.)
 
-(ta is the taxonomic level; it counts up from domain. I cannot figure out why phyloseq won't import the column headers correctly; it is not a great program.)
+(ta is the taxonomic level; it counts up from domain.)
 
 Now, let's look at a subset of the data. Let's make a stacked bar chart of just the Cyanobacteria in each sample.
 
